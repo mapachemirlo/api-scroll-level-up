@@ -4,8 +4,8 @@ const app = require('./app')
 
 dotenv.config()
 
-// const routesV1 = require('./routes/v1')
-// routesV1(app)
+const routesV1 = require('./routes')
+routesV1(app)
 
 const PORT = process.env.PORT || 3001
 
