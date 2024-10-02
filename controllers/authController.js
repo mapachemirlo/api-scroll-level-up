@@ -1,5 +1,9 @@
 const authService = require('../services/authService');
 
+const testControllerAuth = (req, res) => {
+    res.status(200).json({ message: 'Controller OK'})
+}
+
 const register = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -25,4 +29,9 @@ const githubCallback = (req, res) => {
   res.redirect(`/dashboard?token=${token}`);
 };
 
-module.exports = { register, login, googleCallback, githubCallback };
+module.exports = {
+    testControllerAuth,
+    register, 
+    login, 
+    githubCallback 
+};
