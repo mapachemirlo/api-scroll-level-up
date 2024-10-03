@@ -1,4 +1,9 @@
 const authService = require('../services/authService');
+const dotenv = require('dotenv');
+const jwt = require('jsonwebtoken');
+
+
+dotenv.config();
 
 const testControllerAuth = (req, res) => {
     res.status(200).json({ message: 'Controller OK'})
@@ -26,7 +31,9 @@ const login = async (req, res) => {
 
 const githubCallback = (req, res) => {
   const token = jwt.sign({ id: req.user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-  res.redirect(`/dashboard?token=${token}`);
+  console.log('Bearer token: ', token)
+  res.redirect(`/?token=${token}`);
+  //res.status(200).send(token)
 };
 
 module.exports = {
