@@ -34,7 +34,53 @@ const createProject = async (req, res) => {
     }
 }
 
-const updateProject = async (req, res) => {}
+const updateProject = async (req, res) => {
+    try {
+        const project_id = req.params.id;
+        const project_update = req.body;
+
+        if (!project_id || !mongoose.Types.ObjectId.isValid(project_id)) {
+            return res.status(400).send({ message: !project_id ? 'No ID provided by URL.' : 'Invalid ID.' });
+        }
+        const project = await Project.findById(project_id);
+        if (!project) {
+            return res.status(404).send({ message: 'Project not found.' });
+        }
+
+        project_update.updateAt = new Date();
+        const ids_team_user = project_update.team_user_add;
+        const ids_team_user_quit = project_update.team_user_quit;
+        const updateQuery = {};
+        const addToSetQuery = {};
+
+        if (ids_team_user && ids_team_user.length > 0) {
+            addToSetQuery.team = {$each: ids_team_user};
+        }
+
+        for (const key in project_update) {
+            if (project_update.hasOwnProperty(key)) {
+                if (Project.schema.paths[key] && !key.endsWith('_quit')) {
+                    if (!updateQuery.$set) {
+                        updateQuery.$set = {}
+                      }
+                      updateQuery.$set[key] = tasacion_update[key];
+                }
+            }
+        }
+
+        if (Object.keys(addToSetQuery).length > 0) {
+            updateQuery.$addToSet = addToSetQuery;
+        }
+        
+        if (ids_team_user_quit && ids_team_user_quit.length > 0) removeIdsTeamUsers(ids_team_user_quit, project_id);
+
+        await Project.updateOne({_id: project_id}, updateQuery);
+        return res.status(200).send({message: 'Project updated.'});
+
+    } catch (err) {
+        return res.status(500).send({error:err.message, message:'Server error get project.'});
+    }
+}
 
 const getProject = async (req, res) => {
     try {
@@ -132,8 +178,31 @@ const getProjects = async (req, res) => {
     }
 };
 
-const deleteProject = async (req, res) => {}
+const deleteProject = async (req, res) => {
+    try {
+        const project_id = req.params.id;
+        if (!project_id || !mongoose.Types.ObjectId.isValid(project_id)) {
+            return res.status(400).send({ message: !project_id ? 'No ID provided by URL.' : 'Invalid ID.' });
+        }
+        await Project.findByIdAndRemove(project_id);
+        res.status(200).send({message: "Project deleted."})
+    } catch (err) {
+        return res.status(500).send({error:err.message, message:'Server error delete project.'});
+    }
+}
 
+const removeIdsTeamUsers = async (ids_team, id_proj) => {
+    if (ids_team.length > 0) {
+        try {
+            await Project.updateOne({_id: id_proj, team: {$in: ids_team}}, {$pull: {team: {$in: ids_team}}})
+            console.log('Team user deleted');
+        } catch (err) {
+            console.error(err);
+        }
+    } else {
+        console.log('No team user ids provided')
+    }
+}
 
 module.exports = {
     testHttp,

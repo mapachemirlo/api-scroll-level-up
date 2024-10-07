@@ -5,7 +5,33 @@ const mongoose = require('mongoose');
 
 const testHttp = (req, res) => res.status(200).send({data:"end point OK"});
 
-const updateUser = async (req, res) => {}
+const updateUser = async (req, res) => {
+    try {
+        const user_id = req.params.id;
+        const user_update = req.body;
+
+        if (!user_id || !mongoose.Types.ObjectId.isValid(user_id)) {
+            return res.status(400).send({ message: !user_id ? 'No ID provided by URL.' : 'Invalid ID.' });
+        }
+        const user = await User.findById(user_id);
+        if (!user) {
+            return res.status(404).send({ message: 'User not found.' });
+        }
+
+        user_update.updateAt = new Date();
+
+        User.findByIdAndUpdate(user_id, user_update, {new:true})
+            .then((userUpdate) => {
+                res.status(200).send({userUpdate});
+            })
+            .catch((err) => {
+                res.status(404).send({message:'User not updated.', err});
+            })
+
+    } catch (err) {
+        return res.status(500).send({ message: 'Server error update user' , error});
+    }
+}
 
 const getUser = async (req, res) => {
     try {
@@ -17,7 +43,7 @@ const getUser = async (req, res) => {
         }
         res.status(200).send({user})
     } catch (err) {
-        res.status(500).send({ message: 'Server error get user' , error});
+        return res.status(500).send({ message: 'Server error get user' , error});
     }
 }
 
@@ -26,7 +52,7 @@ const getusers = async (req, res) => {
         const users = await User.find();
         res.status(200).send({users});
     } catch (error) {
-        res.status(500).send({ error: e.message, message: 'Server error get users' });
+        return res.status(500).send({ error: e.message, message: 'Server error get users' });
     }
 }
 
@@ -40,7 +66,7 @@ const deleteUser = async (req, res) => {
         }
         res.status(200).send({message: 'User deleted'});
     } catch (error) {
-        res.status(500).send({ message: 'Server error get user' , error});
+        return res.status(500).send({ message: 'Server error get user' , error});
     }
 }
 
