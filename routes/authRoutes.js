@@ -5,7 +5,7 @@ const router = express.Router();
 
 router.get('/test', authController.testControllerAuth);
 
-router.get('/github', authController.validateJWTAndFindOrCreateUser);
+router.post('/github', authController.validateJWTAndFindOrCreateUser);
 
 
 // // GitHub Auth for OAuth App github
