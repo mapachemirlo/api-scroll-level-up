@@ -8,9 +8,11 @@ const testHttp = (req, res) => res.status(200).send({data:"end point OK"});
 const createEvent = async (req, res) => {
     try {
         const event = req.body;
-        event.title = event.title.toUpperCase();
+        event.title = event.title;
         event.project_id = event.project_id;
         let title = event.title;
+
+        console.log(event)
 
         Event.findOne({title: title})
         .then((resul) => {

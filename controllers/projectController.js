@@ -8,7 +8,7 @@ const testHttp = (req, res) => res.status(200).send({data:"end point OK"});
 const createProject = async (req, res) => {
     try {
         const project = req.body;
-        project.name = project.name.toUpperCase();
+        project.name = project.name;
         let project_name = project.name;
 
         Project.findOne({project_name: project_name})

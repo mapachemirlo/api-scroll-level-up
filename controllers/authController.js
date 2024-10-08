@@ -20,7 +20,6 @@ const validateJWTAndFindOrCreateUser = async (req, res) => {
     // Validar el token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const { user } = decoded;
-    console.log(decoded) 
     // Verificar si el usuario ya existe en la base de datos
     let existingUser = await User.findOne({ githubId: user.id });
     

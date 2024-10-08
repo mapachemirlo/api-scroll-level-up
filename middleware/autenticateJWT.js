@@ -18,7 +18,6 @@ const ensureAuth = (req, res, next) => {
         } catch (e) {
             return res.status(404).send({ status: 'ERROR', message: 'INVALID TOKEN' });
         }
-        console.log(payload)
         req.user = payload;
         next();
     } catch (e) {

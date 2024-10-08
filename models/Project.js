@@ -3,7 +3,7 @@ const { Schema } = mongoose;
 
 const ProjectSchema = new Schema({
   team: [{type:mongoose.Types.ObjectId}],
-  project_name: {type: String},
+  project_name: {type: String, require: true},
   description: {type: String},
   github_url: {type: String},
   website_url: {type: String},
