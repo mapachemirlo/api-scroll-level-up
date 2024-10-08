@@ -4,6 +4,7 @@ const { Schema } = mongoose;
 
 const UserSchema = new Schema({
   name: {type: String, required: true},
+  email: {type: String},
   githubId: {type: String, unique: true},
   avatarUrl: {type: String},
   isAdmin: {type: Boolean},
