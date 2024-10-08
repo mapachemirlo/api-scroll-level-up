@@ -178,6 +178,84 @@ const getProjects = async (req, res) => {
     }
 };
 
+const getEventProjects = async (req, res) => {
+    try {
+        const event_id = req.params.id;
+        if (!event_id) return res.status(400).send({ message: 'No event ID provided by URL.' });
+
+        if (mongoose.Types.ObjectId.isValid(event_id)) {
+            const eventWithProjects = await Event.aggregate([
+                {
+                    $match: { _id: new mongoose.Types.ObjectId(event_id) }
+                },
+                {
+                    $lookup: {
+                        from: 'projects',
+                        localField: 'project_id',
+                        foreignField: '_id',
+                        as: 'projects'
+                    }
+                },
+                {
+                    $unwind: "$projects"
+                },
+                {
+                    $lookup: {
+                        from: 'users',
+                        localField: 'projects.team',
+                        foreignField: '_id',
+                        as: 'projects.teamMembers'
+                    }
+                },
+                {
+                    $project: {
+                        _id: 1,
+                        title: 1,
+                        description: 1,
+                        start_date: 1,
+                        end_date: 1,
+                        location: 1,
+                        status: 1,
+                        access: 1,
+                        icon_url: 1,
+                        visibility: 1,
+                        prizes: 1,
+                        url: 1,
+                        evaluation: 1,
+                        rules: 1,
+                        createdAt: 1,
+                        updateAt: 1,
+                        'projects.project_name': 1,
+                        'projects.description': 1,
+                        'projects.github_url': 1,
+                        'projects.website_url': 1,
+                        'projects.status': 1,
+                        'projects.image_url': 1,
+                        'projects.createdAt': 1,
+                        'projects.updateAt': 1,
+                        'projects.teamMembers._id': 1,
+                        'projects.teamMembers.name': 1,
+                        'projects.teamMembers.githubId': 1,
+                        'projects.teamMembers.avatarUrl': 1,
+                        'projects.teamMembers.isAdmin': 1
+                    }
+                }
+            ]);
+
+            if (eventWithProjects.length === 0) {
+                return res.status(404).send({ message: 'Event not found or no projects associated.' });
+            }
+
+            res.send(eventWithProjects);
+
+        } else {
+            res.status(400).send({ message: 'Invalid Event ID.' });
+        }
+    } catch (err) {
+        res.status(500).json({ message: 'Server error retrieving event projects', error: err.message });
+    }
+}
+
 const deleteProject = async (req, res) => {
     try {
         const project_id = req.params.id;
@@ -210,5 +288,6 @@ module.exports = {
     updateProject,
     getProject,
     getProjects,
+    getEventProjects,
     deleteProject
 }
