@@ -178,7 +178,7 @@ const getProjects = async (req, res) => {
     }
 };
 
-const getEventProjects = async (req, res) => {
+const getProjectsInEvent = async (req, res) => {
     try {
         const event_id = req.params.id;
         if (!event_id) return res.status(400).send({ message: 'No event ID provided by URL.' });
@@ -288,6 +288,6 @@ module.exports = {
     updateProject,
     getProject,
     getProjects,
-    getEventProjects,
+    getProjectsInEvent,
     deleteProject
 }
