@@ -85,9 +85,11 @@ const updateProject = async (req, res) => {
 const getProject = async (req, res) => {
     try {
         const project_id = req.params.id;
-        if (project_id == null || undefined) return res.send({message:'no ID provided by URL.'});
+
+        if (!project_id) return res.send({ message: 'No ID provided by URL.' });
+
         if (mongoose.Types.ObjectId.isValid(project_id)) {
-            const projects = await Project.aggregate([
+            const project = await Project.aggregate([
                 {
                     $match: {
                         _id: new mongoose.Types.ObjectId(project_id)
@@ -95,10 +97,24 @@ const getProject = async (req, res) => {
                 },
                 {
                     $lookup: {
-                        from: 'users', 
-                        localField: 'team', 
-                        foreignField: '_id', 
-                        as: 'teamMembers' 
+                        from: 'users',
+                        localField: 'team',
+                        foreignField: '_id',
+                        as: 'teamMembers'
+                    }
+                },
+                {
+                    $lookup: {
+                        from: 'events',
+                        localField: '_id',
+                        foreignField: 'project_id',
+                        as: 'eventInfo'
+                    }
+                },
+                {
+                    $unwind: {
+                        path: '$eventInfo',
+                        preserveNullAndEmptyArrays: true 
                     }
                 },
                 {
@@ -112,41 +128,66 @@ const getProject = async (req, res) => {
                         createdAt: 1,
                         updateAt: 1,
                         teamMembers: {
-                        _id: 1,
-                        name: 1,
-                        githubId: 1,
-                        avatarUrl: 1,
-                        isAdmin: 1,
-                        createdAt: 1,
-                        updateAt: 1
-                        }
+                            _id: 1,
+                            name: 1,
+                            githubId: 1,
+                            avatarUrl: 1,
+                            isAdmin: 1,
+                            createdAt: 1,
+                            updateAt: 1
+                        },
+                        'eventInfo.title': 1,
+                        'eventInfo.description': 1,
+                        'eventInfo.start_date': 1,
+                        'eventInfo.end_date': 1,
+                        'eventInfo.location': 1,
+                        'eventInfo.status': 1,
+                        'eventInfo.access': 1,
+                        'eventInfo.icon_url': 1,
+                        'eventInfo.prizes': 1,
+                        'eventInfo.url': 1,
+                        'eventInfo.evaluation': 1,
+                        'eventInfo.rules': 1
                     }
                 }
             ]);
-            if (projects.length === 0) {
+
+            if (project.length === 0) {
                 return res.status(404).send({ message: 'Project Not found.' });
-              }
-              res.send(projects[0]); 
+            }
 
+            res.send(project[0]);
         } else {
-            res.status(400).send({message: 'Invalid ID.'});
+            res.status(400).send({ message: 'Invalid ID.' });
         }
-        
     } catch (err) {
-        res.status(500).json({ message: 'Server error get projects', error: err.message });
+        res.status(500).json({ message: 'Server error getting project', error: err.message });
     }
-
-}
+};
 
 const getProjects = async (req, res) => {
     try {
         const projects = await Project.aggregate([
             {
                 $lookup: {
-                    from: 'users', 
-                    localField: 'team', 
-                    foreignField: '_id', 
-                    as: 'teamMembers' 
+                    from: 'users',
+                    localField: 'team',
+                    foreignField: '_id',
+                    as: 'teamMembers'
+                }
+            },
+            {
+                $lookup: {
+                    from: 'events',
+                    localField: '_id',
+                    foreignField: 'project_id',
+                    as: 'eventInfo'
+                }
+            },
+            {
+                $unwind: { // Descompone el array de eventos para mostrar solo un evento por proyecto (si corresponde)
+                    path: '$eventInfo',
+                    preserveNullAndEmptyArrays: true // Permite que los proyectos sin eventos asociados no queden fuera
                 }
             },
             {
@@ -160,21 +201,33 @@ const getProjects = async (req, res) => {
                     createdAt: 1,
                     updateAt: 1,
                     teamMembers: {
-                    _id: 1,
-                    name: 1,
-                    githubId: 1,
-                    avatarUrl: 1,
-                    isAdmin: 1,
-                    createdAt: 1,
-                    updateAt: 1
-                    }
+                        _id: 1,
+                        name: 1,
+                        githubId: 1,
+                        avatarUrl: 1,
+                        isAdmin: 1,
+                        createdAt: 1,
+                        updateAt: 1
+                    },
+                    'eventInfo.title': 1,
+                    'eventInfo.description': 1,
+                    'eventInfo.start_date': 1,
+                    'eventInfo.end_date': 1,
+                    'eventInfo.location': 1,
+                    'eventInfo.status': 1,
+                    'eventInfo.access': 1,
+                    'eventInfo.icon_url': 1,
+                    'eventInfo.prizes': 1,
+                    'eventInfo.url': 1,
+                    'eventInfo.evaluation': 1,
+                    'eventInfo.rules': 1
                 }
             }
         ]);
-  
+
         res.status(200).json(projects);
     } catch (err) {
-        res.status(500).json({ message: 'Server error get projects', error: err.message });
+        res.status(500).json({ message: 'Server error getting projects', error: err.message });
     }
 };
 
@@ -291,3 +344,104 @@ module.exports = {
     getProjectsInEvent,
     deleteProject
 }
+
+
+
+
+// const getProjects = async (req, res) => {
+//     try {
+//         const projects = await Project.aggregate([
+//             {
+//                 $lookup: {
+//                     from: 'users', 
+//                     localField: 'team', 
+//                     foreignField: '_id', 
+//                     as: 'teamMembers' 
+//                 }
+//             },
+//             {
+//                 $project: {
+//                     project_name: 1,
+//                     description: 1,
+//                     github_url: 1,
+//                     website_url: 1,
+//                     status: 1,
+//                     image_url: 1,
+//                     createdAt: 1,
+//                     updateAt: 1,
+//                     teamMembers: {
+//                     _id: 1,
+//                     name: 1,
+//                     githubId: 1,
+//                     avatarUrl: 1,
+//                     isAdmin: 1,
+//                     createdAt: 1,
+//                     updateAt: 1
+//                     }
+//                 }
+//             }
+//         ]);
+  
+//         res.status(200).json(projects);
+//     } catch (err) {
+//         res.status(500).json({ message: 'Server error get projects', error: err.message });
+//     }
+// };
+
+
+
+
+//const getProject = async (req, res) => {
+    //     try {
+    //         const project_id = req.params.id;
+    //         if (project_id == null || undefined) return res.send({message:'no ID provided by URL.'});
+    //         if (mongoose.Types.ObjectId.isValid(project_id)) {
+    //             const projects = await Project.aggregate([
+    //                 {
+    //                     $match: {
+    //                         _id: new mongoose.Types.ObjectId(project_id)
+    //                     }
+    //                 },
+    //                 {
+    //                     $lookup: {
+    //                         from: 'users', 
+    //                         localField: 'team', 
+    //                         foreignField: '_id', 
+    //                         as: 'teamMembers' 
+    //                     }
+    //                 },
+    //                 {
+    //                     $project: {
+    //                         project_name: 1,
+    //                         description: 1,
+    //                         github_url: 1,
+    //                         website_url: 1,
+    //                         status: 1,
+    //                         image_url: 1,
+    //                         createdAt: 1,
+    //                         updateAt: 1,
+    //                         teamMembers: {
+    //                         _id: 1,
+    //                         name: 1,
+    //                         githubId: 1,
+    //                         avatarUrl: 1,
+    //                         isAdmin: 1,
+    //                         createdAt: 1,
+    //                         updateAt: 1
+    //                         }
+    //                     }
+    //                 }
+    //             ]);
+    //             if (projects.length === 0) {
+    //                 return res.status(404).send({ message: 'Project Not found.' });
+    //               }
+    //               res.send(projects[0]); 
+    
+    //         } else {
+    //             res.status(400).send({message: 'Invalid ID.'});
+    //         }
+            
+    //     } catch (err) {
+    //         res.status(500).json({ message: 'Server error get projects', error: err.message });
+    //     }
+    // }
