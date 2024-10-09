@@ -59,16 +59,25 @@ const getusers = async (req, res) => {
 const deleteUser = async (req, res) => {
     try {
         const user_id = req.params.id;
-        if (user_id == null || undefined) return res.send({ message: 'No ID provided by URL'});
-        const user = await User.findByIdAndRemove(user_id)
-        if (!user) {
-            return res.status(404).send({message: 'User not found'});
+
+        if (!user_id || !mongoose.Types.ObjectId.isValid(user_id)) {
+            return res.status(400).send({
+                message: !user_id ? 'No ID provided by URL.' : 'Invalid ID.'
+            });
         }
-        res.status(200).send({message: 'User deleted'});
+
+        const user = await User.findByIdAndDelete(user_id);
+
+        if (!user) {
+            return res.status(404).send({ message: 'User not found' });
+        }
+
+        res.status(200).send({ message: 'User deleted' });
     } catch (error) {
-        return res.status(500).send({ message: 'Server error get user' , error});
+        return res.status(500).send({ message: 'Server error deleting user', error: error.message });
     }
-}
+};
+
 
 module.exports = {
     testHttp,

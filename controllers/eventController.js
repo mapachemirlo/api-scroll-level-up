@@ -9,7 +9,7 @@ const createEvent = async (req, res) => {
     try {
         const event = req.body;
         event.title = event.title;
-        event.project_id = event.project_id;
+        //event.project_id = event.project_id;
         let title = event.title;
 
         console.log(event)
@@ -198,15 +198,28 @@ const getEvents = async (req, res) => {
 const deleteEvent = async (req, res) => {
     try {
         const event_id = req.params.id;
+
         if (!event_id || !mongoose.Types.ObjectId.isValid(event_id)) {
-            return res.status(400).send({ message: !event_id ? 'No ID provided by URL.' : 'Invalid ID.' });
+            return res.status(400).send({
+                message: !event_id ? 'No ID provided by URL.' : 'Invalid ID.'
+            });
         }
-        await Event.findByIdAndRemove(event_id);
-        res.status(200).send({message: "Event deleted."})
+
+        const deletedEvent = await Event.findByIdAndDelete(event_id);
+
+        if (!deletedEvent) {
+            return res.status(404).send({ message: 'Event not found.' });
+        }
+
+        res.status(200).send({ message: 'Event deleted successfully.' });
     } catch (err) {
-        return res.status(500).send({error:err.message, message:'Server error delete event.'});
+        return res.status(500).send({
+            error: err.message,
+            message: 'Server error deleting event.'
+        });
     }
-}
+};
+
 
 const removeIdsProjects = async (ids_proj, id_event) => {
     if (ids_proj.length > 0) {
