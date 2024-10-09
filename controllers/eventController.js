@@ -220,7 +220,6 @@ const deleteEvent = async (req, res) => {
     }
 };
 
-
 const removeIdsProjects = async (ids_proj, id_event) => {
     if (ids_proj.length > 0) {
         try {

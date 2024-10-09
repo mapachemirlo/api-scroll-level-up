@@ -361,7 +361,6 @@ const deleteProject = async (req, res) => {
     }
 };
 
-
 const removeIdsTeamUsers = async (ids_team, id_proj) => {
     if (ids_team.length > 0) {
         try {
