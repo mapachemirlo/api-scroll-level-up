@@ -66,7 +66,7 @@ const updateEvent = async (req, res) => {
                     if (!updateQuery.$set) {
                         updateQuery.$set = {}
                       }
-                      updateQuery.$set[key] = tasacion_update[key];
+                      updateQuery.$set[key] = event_update[key];
                 }
             }
         }
