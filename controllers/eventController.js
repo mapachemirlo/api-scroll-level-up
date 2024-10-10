@@ -1,6 +1,10 @@
 const Event = require('../models/Event');
 const Project = require('../models/Project');
 const mongoose = require('mongoose');
+const fs = require('fs');
+const PublitioAPI = require('publitio_js_sdk').default
+const publitio = new PublitioAPI(process.env.PUBLITIO_APYKEY, process.env.PUBLITIO_APYSECRET);
+const { Formidable } = require('formidable');
 
 
 const testHttp = (req, res) => res.status(200).send({data:"end point OK"});
@@ -233,11 +237,132 @@ const removeIdsProjects = async (ids_proj, id_event) => {
     }
 }
 
+// ------------------------------ Métodos para manejo de archivos ------------------------- //
+
+const folderId = 'Q9u6P9PG';
+
+const uploadFileToFolder = async (file, file_name) => {
+    try {
+        const data = await publitio.uploadFile(file, 'file', {
+            title: file_name,
+            folder: folderId, // Utiliza la variable folderId como la carpeta
+            privacy: '1',
+            option_download: '1',
+            id: 1
+        });
+        return {id:data.id, url_download:data.url_download};
+    } catch (error) {
+        console.error(error);
+        throw error;
+    }
+};
+
+const uploadImageEvent = async (req, res) => {
+    const event_id = req.params.id;
+    const form = new Formidable({ multiples: false });
+
+    form.parse(req, async (err, fields, files) => {
+        if (err) {
+            console.error('Error processing file:', err);
+            return res.status(500).json({ error: 'Error processing file' });
+        }
+        const archivo = files.archivo;
+        if (!archivo) {
+            return res.status(400).json({ error: 'No file provided' });
+        }
+        try {
+            if (event_id == null || undefined) return res.send({ message: 'No ID provided by url.' });
+            if (mongoose.Types.ObjectId.isValid(event_id)) {
+                if (archivo) {
+                    const file_name = archivo[0].originalFilename;
+                    const ext_split = file_name.split('.');
+                    const file_ext = ext_split[1];
+                    if (file_ext === 'png' || file_ext === 'jpg' || file_ext === 'JPG') {
+                        const fileBuffer = await fs.promises.readFile(archivo[0].filepath);
+                        const urlbajada = await uploadFileToFolder(fileBuffer, file_name, folderId); // Llama a la función con la carpeta específica
+                        if (urlbajada) {
+                            let url_con_id = urlbajada.url_download + '/id_file=' + urlbajada.id
+                            Event.findByIdAndUpdate(event_id, { $push: { ['icon_url']: url_con_id } }, { new: true })
+                                .then((eventUpdateStored) => {
+                                    res.send({ message: 'Event updated OK' });
+                                })
+                                .catch((err) => {
+                                    console.log(err);
+                                    return res.send({ message: 'Event could not be updated.' });
+                                });
+                        } else {
+                            return console.log('Publitio did not return any download URLs.');
+                        }
+                    } else {
+                        return console.log('Invalid file extension.');
+                    }
+                } else {
+                    console.log('No file was provided.');
+                }
+            } else {
+                res.status(400).send({ message: 'Invalid ID.' });
+            }
+        } catch (error) {
+            console.error('Error uploading file to Publitio:', error);
+            res.status(500).json({ error: 'Error uploading file to Publitio' });
+        }
+    });
+};
+
+const deleteImageEvent = async (req, res) => {
+    const { files } = req.body;
+    try {
+        for (const fileId of files) {
+            // Buscar en MongoDB la URL que contiene el ID del archivo
+            const event = await Event.findOne({ 'icon_url': { $regex: `id_file=${fileId}$` } });
+            if (event) {
+                // Eliminar la URL que contiene el ID en MongoDB
+                event.icon_url = event.icon_url.filter(imageUrl => !imageUrl.includes(`id_file=${fileId}`));
+                await event.save();
+            }
+            // Eliminar el archivo en Publit.io
+            await deleteFilePublitio(fileId);
+        }
+        return res.json({ message: 'Deleted OK.' });
+    } catch (error) {
+        console.error('Error deleting file:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+const deleteFilePublitio = (file) => {
+    // Borrar el archivo de publit y de mongo
+    const file_name = file;
+    const path = `/files/delete/${file_name}`;
+    publitio.call(path, 'DELETE')
+   .then((data) => { console.log(data)})
+   .catch((error) => { console.log(error) })
+}
+
+const listImageEvent = (req, res) => {
+    publitio.call('/files/list', 'GET', { offset: '0', limit: '1000' })
+    .then((data) => {
+        const archivos = data.files
+            .filter(file => file.folder === 'Event/')
+            .map(file => ({
+                id: file.id,
+                title: file.title,
+                url_download: file.url_download
+            }));
+        res.send(archivos);
+    });
+}
+
+
+
 module.exports = {
     testHttp,
     createEvent,
     updateEvent,
     getEvent,
     getEvents,
-    deleteEvent
+    deleteEvent,
+    uploadImageEvent,
+    deleteImageEvent,
+    listImageEvent
 }
