@@ -250,7 +250,8 @@ const uploadFileToFolder = async (file, file_name) => {
             option_download: '1',
             id: 1
         });
-        return {id:data.id, url_download:data.url_download};
+        //return {id:data.id, url_download:data.url_download};
+        return data.url_short;
     } catch (error) {
         console.error(error);
         throw error;
@@ -279,10 +280,11 @@ const uploadImageEvent = async (req, res) => {
                     const file_ext = ext_split[1];
                     if (file_ext === 'png' || file_ext === 'jpg' || file_ext === 'JPG') {
                         const fileBuffer = await fs.promises.readFile(archivo[0].filepath);
-                        const urlbajada = await uploadFileToFolder(fileBuffer, file_name, folderId); // Llama a la función con la carpeta específica
-                        if (urlbajada) {
-                            let url_con_id = urlbajada.url_download + '/id_file=' + urlbajada.id
-                            Event.findByIdAndUpdate(event_id, { $push: { ['icon_url']: url_con_id } }, { new: true })
+                        //const urlbajada = await uploadFileToFolder(fileBuffer, file_name, folderId); // Llama a la función con la carpeta específica
+                        const urlshow = await uploadFileToFolder(fileBuffer, file_name, folderId);
+                        if (urlshow) {
+                            // let url_con_id = urlbajada.url_download + '/id_file=' + urlbajada.id
+                            Event.findByIdAndUpdate(event_id, { $push: { ['icon_url']: urlshow } }, { new: true })
                                 .then((eventUpdateStored) => {
                                     res.send({ message: 'Event updated OK' });
                                 })
@@ -313,7 +315,6 @@ const deleteImageEvent = async (req, res) => {
     const { files } = req.body;
     try {
         for (const fileId of files) {
-            // Buscar en MongoDB la URL que contiene el ID del archivo
             const event = await Event.findOne({ 'icon_url': { $regex: `id_file=${fileId}$` } });
             if (event) {
                 // Eliminar la URL que contiene el ID en MongoDB
