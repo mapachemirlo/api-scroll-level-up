@@ -278,7 +278,7 @@ const uploadImageEvent = async (req, res) => {
                     const file_name = archivo[0].originalFilename;
                     const ext_split = file_name.split('.');
                     const file_ext = ext_split[1];
-                    if (file_ext === 'png' || file_ext === 'jpg' || file_ext === 'JPG') {
+                    if (file_ext === 'png' || file_ext === 'PNG' || file_ext === 'jpg' || file_ext === 'JPG' || file_ext === 'jpeg' || file_ext === 'JPEG') {
                         const fileBuffer = await fs.promises.readFile(archivo[0].filepath);
                         //const urlbajada = await uploadFileToFolder(fileBuffer, file_name, folderId); // Llama a la función con la carpeta específica
                         const urlshow = await uploadFileToFolder(fileBuffer, file_name, folderId);
