@@ -250,7 +250,6 @@ const uploadFileToFolder = async (file, file_name) => {
             option_download: '1',
             id: 1
         });
-        //return {id:data.id, url_download:data.url_download};
         return data.url_short;
     } catch (error) {
         console.error(error);
@@ -280,11 +279,10 @@ const uploadImageEvent = async (req, res) => {
                     const file_ext = ext_split[1];
                     if (file_ext === 'png' || file_ext === 'PNG' || file_ext === 'jpg' || file_ext === 'JPG' || file_ext === 'jpeg' || file_ext === 'JPEG') {
                         const fileBuffer = await fs.promises.readFile(archivo[0].filepath);
-                        //const urlbajada = await uploadFileToFolder(fileBuffer, file_name, folderId); // Llama a la función con la carpeta específica
                         const urlshow = await uploadFileToFolder(fileBuffer, file_name, folderId);
                         if (urlshow) {
-                            // let url_con_id = urlbajada.url_download + '/id_file=' + urlbajada.id
-                            Event.findByIdAndUpdate(event_id, { $push: { ['icon_url']: urlshow } }, { new: true })
+                            //Event.findByIdAndUpdate(event_id, { $push: { ['icon_url']: urlshow } }, { new: true })
+                            Event.findByIdAndUpdate(event_id, { $set: { 'icon_url': urlshow } }, { new: true })
                                 .then((eventUpdateStored) => {
                                     res.send({ message: 'Event updated OK' });
                                 })
