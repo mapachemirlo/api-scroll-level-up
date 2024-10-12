@@ -313,32 +313,75 @@ const uploadImageEvent = async (req, res) => {
 
 const deleteImageEvent = async (req, res) => {
     const { files } = req.body;
+
+    if (!files || files.length === 0) {
+        return res.status(400).json({ message: 'No files provided to delete.' });
+    }
+
     try {
         for (const fileId of files) {
+            // Buscar el evento que contiene la URL del archivo con 'id_file=fileId'
             const event = await Event.findOne({ 'icon_url': { $regex: `id_file=${fileId}$` } });
-            if (event) {
-                // Eliminar la URL que contiene el ID en MongoDB
-                event.icon_url = event.icon_url.filter(imageUrl => !imageUrl.includes(`id_file=${fileId}`));
-                await event.save();
+
+            if (!event) {
+                console.log(`Event with file id ${fileId} not found.`);
+                continue;
             }
-            // Eliminar el archivo en Publit.io
+
+            event.icon_url = event.icon_url.filter(imageUrl => !imageUrl.includes(`id_file=${fileId}`));
+            
+            await event.save();
+            console.log(`Image with file id ${fileId} removed from event icon_url.`);
+
             await deleteFilePublitio(fileId);
         }
-        return res.json({ message: 'Deleted OK.' });
+
+        return res.json({ message: 'Files deleted successfully.' });
+
     } catch (error) {
         console.error('Error deleting file:', error);
-        return res.status(500).json({ message: 'Internal server error' });
+        return res.status(500).json({ message: 'Internal server error during deletion.' });
     }
 };
 
-const deleteFilePublitio = (file) => {
-    // Borrar el archivo de publit y de mongo
-    const file_name = file;
-    const path = `/files/delete/${file_name}`;
-    publitio.call(path, 'DELETE')
-   .then((data) => { console.log(data)})
-   .catch((error) => { console.log(error) })
-}
+const deleteFilePublitio = async (fileId) => {
+    try {
+        const path = `/files/delete/${fileId}`;
+        const response = await publitio.call(path, 'DELETE');
+        console.log(`File with ID ${fileId} deleted from Publitio.`, response);
+    } catch (error) {
+        console.error(`Error deleting file with ID ${fileId} from Publitio:`, error);
+    }
+};
+
+// const deleteImageEvent = async (req, res) => {
+//     const { files } = req.body;
+//     try {
+//         for (const fileId of files) {
+//             const event = await Event.findOne({ 'icon_url': { $regex: `id_file=${fileId}$` } });
+//             if (event) {
+//                 // Eliminar la URL que contiene el ID en MongoDB
+//                 event.icon_url = event.icon_url.filter(imageUrl => !imageUrl.includes(`id_file=${fileId}`));
+//                 await event.save();
+//             }
+//             // Eliminar el archivo en Publit.io
+//             await deleteFilePublitio(fileId);
+//         }
+//         return res.json({ message: 'Deleted OK.' });
+//     } catch (error) {
+//         console.error('Error deleting file:', error);
+//         return res.status(500).json({ message: 'Internal server error' });
+//     }
+// };
+
+// const deleteFilePublitio = (file) => {
+//     // Borrar el archivo de publit y de mongo
+//     const file_name = file;
+//     const path = `/files/delete/${file_name}`;
+//     publitio.call(path, 'DELETE')
+//    .then((data) => { console.log(data)})
+//    .catch((error) => { console.log(error) })
+// }
 
 const listImageEvent = (req, res) => {
     publitio.call('/files/list', 'GET', { offset: '0', limit: '1000' })
