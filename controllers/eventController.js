@@ -109,6 +109,14 @@ const getEvent = async (req, res) => {
                     }
                 },
                 {
+                    $lookup: {
+                        from: 'tracks',
+                        localField: 'track_id',
+                        foreignField: '_id',
+                        as: 'trackDetails' 
+                    }
+                },
+                {
                     $project: {
                         title: 1,
                         description: 1,
@@ -133,6 +141,11 @@ const getEvent = async (req, res) => {
                             website_url: 1,
                             status: 1,
                             image_url: 1
+                        },
+                        trackDetails: {
+                            _id: 1,
+                            track_name: 1,
+                            description: 1
                         }
                     }
                 }
@@ -164,6 +177,14 @@ const getEvents = async (req, res) => {
             }
         },
         {
+            $lookup: {
+                from: 'tracks',
+                localField: 'track_id',
+                foreignField: '_id',
+                as: 'trackDetails' 
+            }
+        },
+        {
             $project: {
                 title: 1,
                 description: 1,
@@ -188,10 +209,15 @@ const getEvents = async (req, res) => {
                     website_url: 1,
                     status: 1,
                     image_url: 1
+                },
+                trackDetails: {
+                    _id: 1,
+                    track_name: 1,
+                    description: 1
                 }
             }
         }
-      ]);
+    ]);
   
       res.status(200).json(events);
     } catch (err) {

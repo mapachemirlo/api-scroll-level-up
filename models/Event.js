@@ -3,6 +3,7 @@ const { Schema } = mongoose;
 
 const EventSchema = new Schema({
   project_id: [{type:mongoose.Types.ObjectId}],
+  track_id: [{type:mongoose.Types.ObjectId}],
   title: {type: String},
   description: {type: String},
   start_date: {type: Date},
