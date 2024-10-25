@@ -56,7 +56,9 @@ const updateEvent = async (req, res) => {
 
         event_update.updateAt = new Date();
         const ids_projects = event_update.project_add;
+        const ids_tracks = event_update.track_add;
         const ids_projects_quit = event_update.project_quit;
+        const ids_tracks_quit = event_update.track_quit;
         const updateQuery = {};
         const addToSetQuery = {};
 
@@ -64,22 +66,26 @@ const updateEvent = async (req, res) => {
             addToSetQuery.project_id = {$each: ids_projects};
         }
 
+        if (ids_tracks && ids_tracks.length > 0) {
+            addToSetQuery.track_id = {$each: ids_tracks};
+        }
+
         for (const key in event_update) {
             if (event_update.hasOwnProperty(key)) {
                 if (Event.schema.paths[key] && !key.endsWith('_quit')) {
                     if (!updateQuery.$set) {
                         updateQuery.$set = {}
-                      }
-                      updateQuery.$set[key] = event_update[key];
+                    }
+                    updateQuery.$set[key] = event_update[key];
                 }
             }
         }
-
         if (Object.keys(addToSetQuery).length > 0) {
             updateQuery.$addToSet = addToSetQuery;
         }
 
         if (ids_projects_quit && ids_projects_quit.length > 0) removeIdsProjects(ids_projects_quit, event_id);
+        if (ids_tracks_quit && ids_tracks_quit.length > 0) removeIdsTracks(ids_tracks_quit, event_id);
 
         await Event.updateOne({_id: event_id}, updateQuery);
         return res.status(200).send({message: 'Event updated.'});
@@ -127,6 +133,7 @@ const getEvent = async (req, res) => {
                         access: 1,
                         icon_url: 1,
                         visibility: 1,
+                        Overview: 1,
                         prizes: 1,
                         url: 1,
                         evaluation: 1,
@@ -195,6 +202,7 @@ const getEvents = async (req, res) => {
                 access: 1,
                 icon_url: 1,
                 visibility: 1,
+                Overview: 1,
                 prizes: 1,
                 url: 1,
                 evaluation: 1,
@@ -260,6 +268,19 @@ const removeIdsProjects = async (ids_proj, id_event) => {
         }
     } else {
         console.log('No Project ids provided')
+    }
+}
+
+const removeIdsTracks = async (ids_trac, id_event) => {
+    if (ids_trac.length > 0) {
+        try {
+            await Event.updateOne({_id: id_event, track_id: {$in: ids_trac}}, {$pull: {track_id: {$in: ids_trac}}})
+            console.log('Track deleted');
+        } catch (err) {
+            console.error(err);
+        }
+    } else {
+        console.log('No Tracks ids provided')
     }
 }
 

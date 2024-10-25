@@ -58,12 +58,18 @@ const updateProject = async (req, res) => {
 
         project_update.updateAt = new Date();
         const ids_team_user = project_update.team_user_add;
+        const ids_tracks = project_update.track_add;
         const ids_team_user_quit = project_update.team_user_quit;
+        const ids_tracks_quit = project_update.track_quit;
         const updateQuery = {};
         const addToSetQuery = {};
 
         if (ids_team_user && ids_team_user.length > 0) {
             addToSetQuery.team = {$each: ids_team_user};
+        }
+
+        if (ids_tracks && ids_tracks.length > 0) {
+            addToSetQuery.tracks = {$each: ids_tracks};
         }
 
         for (const key in project_update) {
@@ -76,12 +82,12 @@ const updateProject = async (req, res) => {
                 }
             }
         }
-
         if (Object.keys(addToSetQuery).length > 0) {
             updateQuery.$addToSet = addToSetQuery;
         }
         
         if (ids_team_user_quit && ids_team_user_quit.length > 0) removeIdsTeamUsers(ids_team_user_quit, project_id);
+        if (ids_tracks_quit && ids_tracks_quit.length > 0) removeIdsTracks(ids_tracks_quit, project_id);
 
         await Project.updateOne({_id: project_id}, updateQuery);
         return res.status(200).send({message: 'Project updated.'});
@@ -139,8 +145,10 @@ const getProject = async (req, res) => {
                         project_name: 1,
                         event: 1,
                         description: 1,
+                        comment: 1,
                         github_url: 1,
                         website_url: 1,
+                        video_url: 1,
                         status: 1,
                         image_url: 1,
                         createdAt: 1,
@@ -313,8 +321,10 @@ const getProjects = async (req, res) => {
                     project_name: 1,
                     event: 1,
                     description: 1,
+                    comment: 1,
                     github_url: 1,
                     website_url: 1,
+                    video_url: 1,
                     status: 1,
                     image_url: 1,
                     createdAt: 1,
@@ -491,6 +501,19 @@ const removeIdsTeamUsers = async (ids_team, id_proj) => {
     }
 }
 
+const removeIdsTracks = async (ids_trac, id_proj) => {
+    if (ids_trac.length > 0) {
+        try {
+            await Project.updateOne({_id: id_proj, tracks: {$in: ids_trac}}, {$pull: {tracks: {$in: ids_trac}}})
+            console.log('Track deleted');
+        } catch (err) {
+            console.error(err);
+        }
+    } else {
+        console.log('No tracks ids provided')
+    }
+}
+
 const saveProjectInEvent = async(id_proj, id_even) => {
     try {
         const id_project = id_proj;
@@ -505,13 +528,142 @@ const saveProjectInEvent = async(id_proj, id_even) => {
     }
 }
 
+// ------------------------------ Métodos para manejo de archivos ------------------------- //
+
+const folderId = 'g8yiubxG';
+
+const uploadFileToFolder = async (file, file_name) => {
+    try {
+        const data = await publitio.uploadFile(file, 'file', {
+            title: file_name,
+            folder: folderId, // Utiliza la variable folderId como la carpeta
+            privacy: '1',
+            option_download: '1',
+            id: 1
+        });
+        return data.url_short;
+    } catch (error) {
+        console.error(error);
+        throw error;
+    }
+};
+
+const uploadImageProject = async (req, res) => {
+    const project_id = req.params.id;
+    const form = new Formidable({ multiples: false });
+
+    form.parse(req, async (err, fields, files) => {
+        if (err) {
+            console.error('Error processing file:', err);
+            return res.status(500).json({ error: 'Error processing file' });
+        }
+        const archivo = files.archivo;
+        if (!archivo) {
+            return res.status(400).json({ error: 'No file provided' });
+        }
+        try {
+            if (project_id == null || undefined) return res.send({ message: 'No ID provided by url.' });
+            if (mongoose.Types.ObjectId.isValid(project_id)) {
+                if (archivo) {
+                    const file_name = archivo[0].originalFilename;
+                    const ext_split = file_name.split('.');
+                    const file_ext = ext_split[1];
+                    if (file_ext === 'png' || file_ext === 'PNG' || file_ext === 'jpg' || file_ext === 'JPG' || file_ext === 'jpeg' || file_ext === 'JPEG') {
+                        const fileBuffer = await fs.promises.readFile(archivo[0].filepath);
+                        const urlshow = await uploadFileToFolder(fileBuffer, file_name, folderId);
+                        if (urlshow) {
+                            Project.findByIdAndUpdate(project_id, { $set: { 'image_url': urlshow } }, { new: true })
+                                .then((projectUpdateStored) => {
+                                    res.send({ message: 'Project updated OK' });
+                                })
+                                .catch((err) => {
+                                    console.log(err);
+                                    return res.send({ message: 'Project could not be updated.' });
+                                });
+                        } else {
+                            return console.log('Publitio did not return any download URLs.');
+                        }
+                    } else {
+                        return console.log('Invalid file extension.');
+                    }
+                } else {
+                    console.log('No file was provided.');
+                }
+            } else {
+                res.status(400).send({ message: 'Invalid ID.' });
+            }
+        } catch (error) {
+            console.error('Error uploading file to Publitio:', error);
+            res.status(500).json({ error: 'Error uploading file to Publitio' });
+        }
+    });
+};
+
+// const deleteImageProject = async (req, res) => {
+//     const { files } = req.body;
+
+//     if (!files || files.length === 0) {
+//         return res.status(400).json({ message: 'No files provided to delete.' });
+//     }
+
+//     try {
+//         for (const fileId of files) {
+//             // Buscar el evento que contiene la URL del archivo con 'id_file=fileId'
+//             const project = await Project.findOne({ 'image_url': { $regex: `id_file=${fileId}$` } });
+
+//             if (!project) {
+//                 console.log(`Project with file id ${fileId} not found.`);
+//                 continue;
+//             }
+
+//             project.image_url = project.image_url.filter(imageUrl => !imageUrl.includes(`id_file=${fileId}`));
+            
+//             await project.save();
+//             console.log(`Image with file id ${fileId} removed from project image_url.`);
+
+//             await deleteFilePublitio(fileId);
+//         }
+
+//         return res.json({ message: 'Files deleted successfully.' });
+
+//     } catch (error) {
+//         console.error('Error deleting file:', error);
+//         return res.status(500).json({ message: 'Internal server error during deletion.' });
+//     }
+// };
+
+const deleteFilePublitio = async (fileId) => {
+    try {
+        const path = `/files/delete/${fileId}`;
+        const response = await publitio.call(path, 'DELETE');
+        console.log(`File with ID ${fileId} deleted from Publitio.`, response);
+    } catch (error) {
+        console.error(`Error deleting file with ID ${fileId} from Publitio:`, error);
+    }
+};
+
+const listImageProject = (req, res) => {
+    publitio.call('/files/list', 'GET', { offset: '0', limit: '1000' })
+    .then((data) => {
+        const archivos = data.files
+            .filter(file => file.folder === 'Event/')
+            .map(file => ({
+                id: file.id,
+                title: file.title,
+                url_download: file.url_download
+            }));
+        res.send(archivos);
+    });
+}
+
 module.exports = {
     testHttp,
     createProject,
     updateProject,
     getProject,
     getProjects,
-    deleteProject
+    deleteProject,
+    uploadImageProject
 }
 
 

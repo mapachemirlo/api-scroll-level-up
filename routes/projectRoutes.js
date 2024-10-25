@@ -12,5 +12,7 @@ router.get('/get-project/:id?', md_auth.ensureAuth, projectController.getProject
 router.put('/update-project/:id?', md_auth.ensureAuth, projectController.updateProject);
 router.delete('/delete-project/:id?', md_auth.ensureAuth, projectController.deleteProject);
 
+router.post('/upload-image-project/:id?', md_auth.ensureAuth, projectController.uploadImageProject);
+
 
 module.exports = router;
