@@ -13,7 +13,7 @@ const EventSchema = new Schema({
   access: {type: String, enum: ['FREE', 'INVITE ONLY'], default: 'FREE'},
   icon_url: {type: String},
   visibility: {type: Boolean},
-  Overview: {type: String},
+  overview: {type: String},
   prizes: {type: String},
   url: {type: String},
   evaluation: {type: String},
