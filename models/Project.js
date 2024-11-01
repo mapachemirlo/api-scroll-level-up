@@ -4,7 +4,8 @@ const { Schema } = mongoose;
 const ProjectSchema = new Schema({
   team: [{type:mongoose.Types.ObjectId}],
   event: {type:mongoose.Types.ObjectId},
-  tracks: [{type:mongoose.Types.ObjectId}],
+  // tracks: [{type:mongoose.Types.ObjectId}],
+  tracks: [{type: String}],
   project_name: {type: String, require: true},
   description: {type: String},
   comment: {type: String},

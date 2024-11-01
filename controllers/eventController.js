@@ -114,14 +114,14 @@ const getEvent = async (req, res) => {
                         as: 'projectDetails'
                     }
                 },
-                {
-                    $lookup: {
-                        from: 'tracks',
-                        localField: 'track_id',
-                        foreignField: '_id',
-                        as: 'trackDetails' 
-                    }
-                },
+                // {
+                //     $lookup: {
+                //         from: 'tracks',
+                //         localField: 'track_id',
+                //         foreignField: '_id',
+                //         as: 'trackDetails' 
+                //     }
+                // },
                 {
                     $project: {
                         title: 1,
@@ -144,16 +144,23 @@ const getEvent = async (req, res) => {
                             _id: 1,
                             project_name: 1,
                             description: 1,
+                            comment: 1,
                             github_url: 1,
                             website_url: 1,
+                            video_url: 1,
+                            image_url: 1,
+                            tracks: 1,
                             status: 1,
-                            image_url: 1
+                            image_url: 1,
+                            createdAt: 1,
+                            updateAt: 1
                         },
-                        trackDetails: {
-                            _id: 1,
-                            track_name: 1,
-                            description: 1
-                        }
+                        tracks: 1
+                        // trackDetails: {
+                        //     _id: 1,
+                        //     track_name: 1,
+                        //     description: 1
+                        // }
                     }
                 }
           ]);
@@ -183,14 +190,14 @@ const getEvents = async (req, res) => {
                 as: 'projectDetails' 
             }
         },
-        {
-            $lookup: {
-                from: 'tracks',
-                localField: 'track_id',
-                foreignField: '_id',
-                as: 'trackDetails' 
-            }
-        },
+        // {
+        //     $lookup: {
+        //         from: 'tracks',
+        //         localField: 'track_id',
+        //         foreignField: '_id',
+        //         as: 'trackDetails' 
+        //     }
+        // },
         {
             $project: {
                 title: 1,
@@ -213,16 +220,23 @@ const getEvents = async (req, res) => {
                     _id: 1,
                     project_name: 1,
                     description: 1,
+                    comment: 1,
                     github_url: 1,
                     website_url: 1,
+                    video_url: 1,
+                    image_url: 1,
+                    tracks: 1,
                     status: 1,
-                    image_url: 1
+                    image_url: 1,
+                    createdAt: 1,
+                    updateAt: 1
                 },
-                trackDetails: {
-                    _id: 1,
-                    track_name: 1,
-                    description: 1
-                }
+                tracks: 1
+                // trackDetails: {
+                //     _id: 1,
+                //     track_name: 1,
+                //     description: 1
+                // }
             }
         }
     ]);
