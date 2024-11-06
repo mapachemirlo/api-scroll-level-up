@@ -56,36 +56,65 @@ const updateEvent = async (req, res) => {
 
         event_update.updateAt = new Date();
         const ids_projects = event_update.project_add;
-        const ids_tracks = event_update.track_add;
+        //const ids_tracks = event_update.track_add;
         const ids_projects_quit = event_update.project_quit;
-        const ids_tracks_quit = event_update.track_quit;
+        //const ids_tracks_quit = event_update.track_quit;
+        const tracks_add = event_update.track_add; // nuevo
+        const tracks_quit = event_update.track_quit; // nuevo
+
         const updateQuery = {};
         const addToSetQuery = {};
+        const pullQuery = {}; // nuevo
 
         if (ids_projects && ids_projects.length > 0) {
             addToSetQuery.project_id = {$each: ids_projects};
         }
 
-        if (ids_tracks && ids_tracks.length > 0) {
-            addToSetQuery.track_id = {$each: ids_tracks};
+        // Agregar elementos al array `tracks`  //nuevo
+        if (tracks_add && tracks_add.length > 0) {
+            addToSetQuery.tracks = { $each: tracks_add };
         }
 
+        // Quitar elementos del array `tracks` // nuevo
+        if (tracks_quit && tracks_quit.length > 0) {
+            pullQuery.tracks = { $in: tracks_quit };
+        }
+
+        // if (ids_tracks && ids_tracks.length > 0) {
+        //     addToSetQuery.track_id = {$each: ids_tracks};
+        // }
+
+        // for (const key in event_update) {
+        //     if (event_update.hasOwnProperty(key)) {
+        //         if (Event.schema.paths[key] && !key.endsWith('_quit')) {
+        //             if (!updateQuery.$set) {
+        //                 updateQuery.$set = {}
+        //             }
+        //             updateQuery.$set[key] = event_update[key];
+        //         }
+        //     }
+        // }
+
+        // Configurar `$set` para actualizar otros campos // nuevo
         for (const key in event_update) {
-            if (event_update.hasOwnProperty(key)) {
-                if (Event.schema.paths[key] && !key.endsWith('_quit')) {
-                    if (!updateQuery.$set) {
-                        updateQuery.$set = {}
-                    }
-                    updateQuery.$set[key] = event_update[key];
+            if (event_update.hasOwnProperty(key) && Event.schema.paths[key] && !key.endsWith('_quit') && !key.endsWith('_add')) {
+                if (!updateQuery.$set) {
+                    updateQuery.$set = {};
                 }
+                updateQuery.$set[key] = event_update[key];
             }
         }
         if (Object.keys(addToSetQuery).length > 0) {
             updateQuery.$addToSet = addToSetQuery;
         }
 
+        // Añadir `$pull` si existen elementos que quitar  // nuevo
+        if (Object.keys(pullQuery).length > 0) {
+            updateQuery.$pull = pullQuery;
+        } 
+
         if (ids_projects_quit && ids_projects_quit.length > 0) removeIdsProjects(ids_projects_quit, event_id);
-        if (ids_tracks_quit && ids_tracks_quit.length > 0) removeIdsTracks(ids_tracks_quit, event_id);
+        //if (ids_tracks_quit && ids_tracks_quit.length > 0) removeIdsTracks(ids_tracks_quit, event_id);
 
         await Event.updateOne({_id: event_id}, updateQuery);
         return res.status(200).send({message: 'Event updated.'});

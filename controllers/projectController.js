@@ -64,36 +64,67 @@ const updateProject = async (req, res) => {
 
         project_update.updateAt = new Date();
         const ids_team_user = project_update.team_user_add;
-        const ids_tracks = project_update.track_add;
+        //const ids_tracks = project_update.track_add;
         const ids_team_user_quit = project_update.team_user_quit;
-        const ids_tracks_quit = project_update.track_quit;
+        //const ids_tracks_quit = project_update.track_quit;
+        const tracks_add = project_update.track_add; // nuevo
+        const tracks_quit = project_update.track_quit; // nuevo
+
         const updateQuery = {};
         const addToSetQuery = {};
+        const pullQuery = {}; // nuevo
 
         if (ids_team_user && ids_team_user.length > 0) {
             addToSetQuery.team = {$each: ids_team_user};
         }
 
-        if (ids_tracks && ids_tracks.length > 0) {
-            addToSetQuery.tracks = {$each: ids_tracks};
+        // if (ids_tracks && ids_tracks.length > 0) {
+        //     addToSetQuery.tracks = {$each: ids_tracks};
+        // }
+
+        // Agregar elementos al array `tracks`  //nuevo
+        if (tracks_add && tracks_add.length > 0) {
+            addToSetQuery.tracks = { $each: tracks_add };
         }
 
+        // Quitar elementos del array `tracks`  //nuevo
+        if (tracks_quit && tracks_quit.length > 0) {
+            pullQuery.tracks = { $in: tracks_quit };
+        }
+
+        // for (const key in project_update) {
+        //     if (project_update.hasOwnProperty(key)) {
+        //         if (Project.schema.paths[key] && !key.endsWith('_quit')) {
+        //             if (!updateQuery.$set) {
+        //                 updateQuery.$set = {}
+        //               }
+        //               updateQuery.$set[key] = project_update[key];
+        //         }
+        //     }
+        // }
+
+        // Configurar `$set` para actualizar otros campos // nuevo
         for (const key in project_update) {
-            if (project_update.hasOwnProperty(key)) {
-                if (Project.schema.paths[key] && !key.endsWith('_quit')) {
-                    if (!updateQuery.$set) {
-                        updateQuery.$set = {}
-                      }
-                      updateQuery.$set[key] = project_update[key];
+            if (project_update.hasOwnProperty(key) && Project.schema.paths[key] && !key.endsWith('_quit') && !key.endsWith('_add')) {
+                if (!updateQuery.$set) {
+                    updateQuery.$set = {};
                 }
+                updateQuery.$set[key] = project_update[key];
             }
         }
+
         if (Object.keys(addToSetQuery).length > 0) {
             updateQuery.$addToSet = addToSetQuery;
         }
+
+        // Añadir `$pull` si existen elementos que quitar //nuevo
+        if (Object.keys(pullQuery).length > 0) {
+            updateQuery.$pull = pullQuery;
+        }
+
         
         if (ids_team_user_quit && ids_team_user_quit.length > 0) removeIdsTeamUsers(ids_team_user_quit, project_id);
-        if (ids_tracks_quit && ids_tracks_quit.length > 0) removeIdsTracks(ids_tracks_quit, project_id);
+        //if (ids_tracks_quit && ids_tracks_quit.length > 0) removeIdsTracks(ids_tracks_quit, project_id);
 
         await Project.updateOne({_id: project_id}, updateQuery);
         return res.status(200).send({message: 'Project updated.'});
