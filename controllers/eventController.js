@@ -12,34 +12,34 @@ const testHttp = (req, res) => res.status(200).send({data:"end point OK"});
 const createEvent = async (req, res) => {
     try {
         const event = req.body;
-        event.title = event.title;
-        //event.project_id = event.project_id;
-        let title = event.title;
 
-        console.log(event)
+        if (typeof event.tracks === 'string') {
+            event.tracks = event.tracks.split(/[\s,]+/).filter(Boolean);
+        }
+        const title = event.title;
 
-        Event.findOne({title: title})
-        .then((resul) => {
-            if (resul === null || resul === undefined) {
-                const newEvent = new Event(event);
-                newEvent.save()
-                .then((eventStored) => {
-                    res.status(200).send({event: eventStored});
-                })
-            } else {
-                res.status(400).send({message:'Event already exists'});
-            }
-        })
-        .catch((err) => {
-            if(err.code == 11000) {
-                res.status(400).send({message:'Error in event search'});
-            }
-        })
+        Event.findOne({ title: title })
+            .then((resul) => {
+                if (resul === null || resul === undefined) {
+                    const newEvent = new Event(event);
+                    newEvent.save()
+                        .then((eventStored) => {
+                            res.status(200).send({ event: eventStored });
+                        });
+                } else {
+                    res.status(400).send({ message: 'Event already exists' });
+                }
+            })
+            .catch((err) => {
+                if (err.code === 11000) {
+                    res.status(400).send({ message: 'Error in event search' });
+                }
+            });
 
     } catch (err) {
-        return res.status(500).send({message: 'Server error create event', err})
+        return res.status(500).send({ message: 'Server error create event', err });
     }
-}
+};
 
 const updateEvent = async (req, res) => {
     try {
@@ -469,3 +469,36 @@ module.exports = {
     deleteImageEvent,
     listImageEvent
 }
+
+
+// const createEvent = async (req, res) => {
+//     try {
+//         const event = req.body;
+//         event.title = event.title;
+//         //event.project_id = event.project_id;
+//         let title = event.title;
+
+//         console.log(event)
+
+//         Event.findOne({title: title})
+//         .then((resul) => {
+//             if (resul === null || resul === undefined) {
+//                 const newEvent = new Event(event);
+//                 newEvent.save()
+//                 .then((eventStored) => {
+//                     res.status(200).send({event: eventStored});
+//                 })
+//             } else {
+//                 res.status(400).send({message:'Event already exists'});
+//             }
+//         })
+//         .catch((err) => {
+//             if(err.code == 11000) {
+//                 res.status(400).send({message:'Error in event search'});
+//             }
+//         })
+
+//     } catch (err) {
+//         return res.status(500).send({message: 'Server error create event', err})
+//     }
+// }

@@ -9,39 +9,45 @@ const testHttp = (req, res) => res.status(200).send({data:"end point OK"});
 const createProject = async (req, res) => {
     try {
         const project = req.body;
+
+        // Asegúrate de que `tracks` sea un array de strings
+        if (typeof project.tracks === 'string') {
+            // Si `tracks` es una cadena, conviértelo en un array de palabras usando espacios o comas como separadores
+            project.tracks = project.tracks.split(/[\s,]+/).filter(Boolean);
+        }
+
         project.project_name = project.name;
-        let project_name = project.project_name;
+        const project_name = project.project_name;
         const event_id = project.event;
 
-        Project.findOne({project_name: project_name})
-        .then((resul) => {
-            if (resul === null || resul === undefined) {
-                const newProject = new Project(project);
-                newProject.save()
-                .then((projectStored) => {
-                    const project_id  = projectStored._id;
-                    if (event_id === null) {
-                        res.status(200).send({project: projectStored});
-                    } else {
-                        saveProjectInEvent(project_id, event_id);
-                        res.status(200).send({project: projectStored});
-                    }
-
-                })
-            } else {
-                res.status(400).send({message:'Project already exists'});
-            }
-        })
-        .catch((err) => {
-            if(err.code == 11000) {
-                res.status(400).send({message:'Error in project search'});
-            }
-        })
+        Project.findOne({ project_name: project_name })
+            .then((resul) => {
+                if (resul === null || resul === undefined) {
+                    const newProject = new Project(project);
+                    newProject.save()
+                        .then((projectStored) => {
+                            const project_id = projectStored._id;
+                            if (!event_id) {
+                                res.status(200).send({ project: projectStored });
+                            } else {
+                                saveProjectInEvent(project_id, event_id);
+                                res.status(200).send({ project: projectStored });
+                            }
+                        });
+                } else {
+                    res.status(400).send({ message: 'Project already exists' });
+                }
+            })
+            .catch((err) => {
+                if (err.code === 11000) {
+                    res.status(400).send({ message: 'Error in project search' });
+                }
+            });
 
     } catch (err) {
-        return res.status(500).send({message: 'Server error create project', err})
+        return res.status(500).send({ message: 'Server error create project', err });
     }
-}
+};
 
 const updateProject = async (req, res) => {
     try {
@@ -835,3 +841,40 @@ module.exports = {
 //         res.status(500).json({ message: 'Server error getting projects', error: err.message });
 //     }
 // };
+
+// const createProject = async (req, res) => {
+//     try {
+//         const project = req.body;
+//         project.project_name = project.name;
+//         let project_name = project.project_name;
+//         const event_id = project.event;
+
+//         Project.findOne({project_name: project_name})
+//         .then((resul) => {
+//             if (resul === null || resul === undefined) {
+//                 const newProject = new Project(project);
+//                 newProject.save()
+//                 .then((projectStored) => {
+//                     const project_id  = projectStored._id;
+//                     if (event_id === null) {
+//                         res.status(200).send({project: projectStored});
+//                     } else {
+//                         saveProjectInEvent(project_id, event_id);
+//                         res.status(200).send({project: projectStored});
+//                     }
+
+//                 })
+//             } else {
+//                 res.status(400).send({message:'Project already exists'});
+//             }
+//         })
+//         .catch((err) => {
+//             if(err.code == 11000) {
+//                 res.status(400).send({message:'Error in project search'});
+//             }
+//         })
+
+//     } catch (err) {
+//         return res.status(500).send({message: 'Server error create project', err})
+//     }
+// }
