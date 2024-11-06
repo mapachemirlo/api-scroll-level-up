@@ -203,93 +203,9 @@ const getProject = async (req, res) => {
     }
 };
 
-// const getProject = async (req, res) => {
-//     try {
-//         const project_id = req.params.id;
-
-//         if (!project_id) return res.send({ message: 'No ID provided by URL.' });
-
-//         if (mongoose.Types.ObjectId.isValid(project_id)) {
-//             const project = await Project.aggregate([
-//                 {
-//                     $match: {
-//                         _id: new mongoose.Types.ObjectId(project_id)
-//                     }
-//                 },
-//                 {
-//                     $lookup: {
-//                         from: 'users',
-//                         localField: 'team',
-//                         foreignField: '_id',
-//                         as: 'teamMembers'
-//                     }
-//                 },
-//                 {
-//                     $lookup: {
-//                         from: 'events',
-//                         localField: '_id',
-//                         foreignField: 'project_id',
-//                         as: 'eventInfo'
-//                     }
-//                 },
-//                 {
-//                     $unwind: {
-//                         path: '$eventInfo',
-//                         preserveNullAndEmptyArrays: true 
-//                     }
-//                 },
-//                 {
-//                     $project: {
-//                         project_name: 1,
-//                         event: 1,
-//                         description: 1,
-//                         github_url: 1,
-//                         website_url: 1,
-//                         status: 1,
-//                         image_url: 1,
-//                         createdAt: 1,
-//                         updateAt: 1,
-//                         teamMembers: {
-//                             _id: 1,
-//                             name: 1,
-//                             githubId: 1,
-//                             avatarUrl: 1,
-//                             isAdmin: 1,
-//                             createdAt: 1,
-//                             updateAt: 1
-//                         },
-//                         'eventInfo.title': 1,
-//                         'eventInfo.description': 1,
-//                         'eventInfo.start_date': 1,
-//                         'eventInfo.end_date': 1,
-//                         'eventInfo.location': 1,
-//                         'eventInfo.status': 1,
-//                         'eventInfo.access': 1,
-//                         'eventInfo.icon_url': 1,
-//                         'eventInfo.prizes': 1,
-//                         'eventInfo.url': 1,
-//                         'eventInfo.evaluation': 1,
-//                         'eventInfo.rules': 1
-//                     }
-//                 }
-//             ]);
-
-//             if (project.length === 0) {
-//                 return res.status(404).send({ message: 'Project Not found.' });
-//             }
-
-//             res.send(project[0]);
-//         } else {
-//             res.status(400).send({ message: 'Invalid ID.' });
-//         }
-//     } catch (err) {
-//         res.status(500).json({ message: 'Server error getting project', error: err.message });
-//     }
-// };
-
 const getProjects = async (req, res) => {
     try {
-        const eventId = req.body.id_event;
+        const eventId = req.body?.id_event || null;
 
         // Pipeline base sin el match
         let pipeline = [
@@ -371,7 +287,7 @@ const getProjects = async (req, res) => {
         if (eventId) {
             pipeline.unshift({
                 $match: {
-                    event: new mongoose.Types.ObjectId(eventId) // Match por el campo "event" en el proyecto
+                    event: new mongoose.Types.ObjectId(eventId)
                 }
             });
         }
@@ -387,90 +303,6 @@ const getProjects = async (req, res) => {
         res.status(500).json({ message: 'Server error getting projects', error: err.message });
     }
 };
-
-// const getProjects = async (req, res) => {
-//     try {
-//         const eventId = req.body.id_event;
-//         // Pipeline base sin el match
-//         let pipeline = [
-//             {
-//                 $lookup: {
-//                     from: 'users',
-//                     localField: 'team',
-//                     foreignField: '_id',
-//                     as: 'teamMembers'
-//                 }
-//             },
-//             {
-//                 $lookup: {
-//                     from: 'events',
-//                     localField: 'event',
-//                     foreignField: '_id',
-//                     as: 'eventInfo'
-//                 }
-//             },
-//             {
-//                 $unwind: {
-//                     path: '$eventInfo',
-//                     preserveNullAndEmptyArrays: true
-//                 }
-//             },
-//             {
-//                 $project: {
-//                     project_name: 1,
-//                     event: 1,
-//                     description: 1,
-//                     github_url: 1,
-//                     website_url: 1,
-//                     status: 1,
-//                     image_url: 1,
-//                     createdAt: 1,
-//                     updateAt: 1,
-//                     teamMembers: {
-//                         _id: 1,
-//                         name: 1,
-//                         githubId: 1,
-//                         avatarUrl: 1,
-//                         isAdmin: 1,
-//                         createdAt: 1,
-//                         updateAt: 1
-//                     },
-//                     'eventInfo.title': 1,
-//                     'eventInfo.description': 1,
-//                     'eventInfo.start_date': 1,
-//                     'eventInfo.end_date': 1,
-//                     'eventInfo.location': 1,
-//                     'eventInfo.status': 1,
-//                     'eventInfo.access': 1,
-//                     'eventInfo.icon_url': 1,
-//                     'eventInfo.prizes': 1,
-//                     'eventInfo.url': 1,
-//                     'eventInfo.evaluation': 1,
-//                     'eventInfo.rules': 1
-//                 }
-//             }
-//         ];
-
-//         // Si se pasa un _id de evento, se filtra por ese evento
-//         if (eventId) {
-//             pipeline.unshift({
-//                 $match: {
-//                     event: new mongoose.Types.ObjectId(eventId) // Match por el campo "event" en el proyecto
-//                 }
-//             });
-//         }
-
-//         const projects = await Project.aggregate(pipeline);
-
-//         if (projects.length === 0) {
-//             return res.status(404).json({ message: 'No projects found.' });
-//         }
-
-//         res.status(200).json(projects);
-//     } catch (err) {
-//         res.status(500).json({ message: 'Server error getting projects', error: err.message });
-//     }
-// };
 
 const deleteProject = async (req, res) => {
     try {
@@ -842,39 +674,177 @@ module.exports = {
 //     }
 // };
 
-// const createProject = async (req, res) => {
+
+
+
+
+
+
+
+// const getProject = async (req, res) => {
 //     try {
-//         const project = req.body;
-//         project.project_name = project.name;
-//         let project_name = project.project_name;
-//         const event_id = project.event;
+//         const project_id = req.params.id;
 
-//         Project.findOne({project_name: project_name})
-//         .then((resul) => {
-//             if (resul === null || resul === undefined) {
-//                 const newProject = new Project(project);
-//                 newProject.save()
-//                 .then((projectStored) => {
-//                     const project_id  = projectStored._id;
-//                     if (event_id === null) {
-//                         res.status(200).send({project: projectStored});
-//                     } else {
-//                         saveProjectInEvent(project_id, event_id);
-//                         res.status(200).send({project: projectStored});
+//         if (!project_id) return res.send({ message: 'No ID provided by URL.' });
+
+//         if (mongoose.Types.ObjectId.isValid(project_id)) {
+//             const project = await Project.aggregate([
+//                 {
+//                     $match: {
+//                         _id: new mongoose.Types.ObjectId(project_id)
 //                     }
+//                 },
+//                 {
+//                     $lookup: {
+//                         from: 'users',
+//                         localField: 'team',
+//                         foreignField: '_id',
+//                         as: 'teamMembers'
+//                     }
+//                 },
+//                 {
+//                     $lookup: {
+//                         from: 'events',
+//                         localField: '_id',
+//                         foreignField: 'project_id',
+//                         as: 'eventInfo'
+//                     }
+//                 },
+//                 {
+//                     $unwind: {
+//                         path: '$eventInfo',
+//                         preserveNullAndEmptyArrays: true 
+//                     }
+//                 },
+//                 {
+//                     $project: {
+//                         project_name: 1,
+//                         event: 1,
+//                         description: 1,
+//                         github_url: 1,
+//                         website_url: 1,
+//                         status: 1,
+//                         image_url: 1,
+//                         createdAt: 1,
+//                         updateAt: 1,
+//                         teamMembers: {
+//                             _id: 1,
+//                             name: 1,
+//                             githubId: 1,
+//                             avatarUrl: 1,
+//                             isAdmin: 1,
+//                             createdAt: 1,
+//                             updateAt: 1
+//                         },
+//                         'eventInfo.title': 1,
+//                         'eventInfo.description': 1,
+//                         'eventInfo.start_date': 1,
+//                         'eventInfo.end_date': 1,
+//                         'eventInfo.location': 1,
+//                         'eventInfo.status': 1,
+//                         'eventInfo.access': 1,
+//                         'eventInfo.icon_url': 1,
+//                         'eventInfo.prizes': 1,
+//                         'eventInfo.url': 1,
+//                         'eventInfo.evaluation': 1,
+//                         'eventInfo.rules': 1
+//                     }
+//                 }
+//             ]);
 
-//                 })
-//             } else {
-//                 res.status(400).send({message:'Project already exists'});
+//             if (project.length === 0) {
+//                 return res.status(404).send({ message: 'Project Not found.' });
 //             }
-//         })
-//         .catch((err) => {
-//             if(err.code == 11000) {
-//                 res.status(400).send({message:'Error in project search'});
-//             }
-//         })
 
+//             res.send(project[0]);
+//         } else {
+//             res.status(400).send({ message: 'Invalid ID.' });
+//         }
 //     } catch (err) {
-//         return res.status(500).send({message: 'Server error create project', err})
+//         res.status(500).json({ message: 'Server error getting project', error: err.message });
 //     }
-// }
+// };
+
+// const getProjects = async (req, res) => {
+//     try {
+//         const eventId = req.body.id_event;
+//         // Pipeline base sin el match
+//         let pipeline = [
+//             {
+//                 $lookup: {
+//                     from: 'users',
+//                     localField: 'team',
+//                     foreignField: '_id',
+//                     as: 'teamMembers'
+//                 }
+//             },
+//             {
+//                 $lookup: {
+//                     from: 'events',
+//                     localField: 'event',
+//                     foreignField: '_id',
+//                     as: 'eventInfo'
+//                 }
+//             },
+//             {
+//                 $unwind: {
+//                     path: '$eventInfo',
+//                     preserveNullAndEmptyArrays: true
+//                 }
+//             },
+//             {
+//                 $project: {
+//                     project_name: 1,
+//                     event: 1,
+//                     description: 1,
+//                     github_url: 1,
+//                     website_url: 1,
+//                     status: 1,
+//                     image_url: 1,
+//                     createdAt: 1,
+//                     updateAt: 1,
+//                     teamMembers: {
+//                         _id: 1,
+//                         name: 1,
+//                         githubId: 1,
+//                         avatarUrl: 1,
+//                         isAdmin: 1,
+//                         createdAt: 1,
+//                         updateAt: 1
+//                     },
+//                     'eventInfo.title': 1,
+//                     'eventInfo.description': 1,
+//                     'eventInfo.start_date': 1,
+//                     'eventInfo.end_date': 1,
+//                     'eventInfo.location': 1,
+//                     'eventInfo.status': 1,
+//                     'eventInfo.access': 1,
+//                     'eventInfo.icon_url': 1,
+//                     'eventInfo.prizes': 1,
+//                     'eventInfo.url': 1,
+//                     'eventInfo.evaluation': 1,
+//                     'eventInfo.rules': 1
+//                 }
+//             }
+//         ];
+
+//         // Si se pasa un _id de evento, se filtra por ese evento
+//         if (eventId) {
+//             pipeline.unshift({
+//                 $match: {
+//                     event: new mongoose.Types.ObjectId(eventId) // Match por el campo "event" en el proyecto
+//                 }
+//             });
+//         }
+
+//         const projects = await Project.aggregate(pipeline);
+
+//         if (projects.length === 0) {
+//             return res.status(404).json({ message: 'No projects found.' });
+//         }
+
+//         res.status(200).json(projects);
+//     } catch (err) {
+//         res.status(500).json({ message: 'Server error getting projects', error: err.message });
+//     }
+// };
